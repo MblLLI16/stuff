@@ -1,15 +1,7 @@
-﻿using Microsoft.Office.Interop.Excel;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using System;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Diagnostics;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Excel = Microsoft.Office.Interop.Excel;
 
@@ -61,7 +53,7 @@ namespace СourseWork
         }
 
 
-        //Другие элементы
+        // Другие элементы
         #region OtherElements
 
         private void panel1_Paint(object sender, PaintEventArgs e)
@@ -79,6 +71,8 @@ namespace СourseWork
 
         //Кнопки взаимодействия
         #region IteractionButtons
+
+        // Добавление элементов button
         private void button1_Click(object sender, EventArgs e)
         {
             Form2 plForm = new Form2();
@@ -94,7 +88,6 @@ namespace СourseWork
             string panelElements1;
             string panelElements2;
             string panelElements3;
-            string panelElements4;
             int panelIntElements1;
             int panelIntElements2;
             int panelIntElements3;
@@ -104,35 +97,45 @@ namespace СourseWork
                 case "Факультет":
                     plForm.panel1.Visible = true;
                     plForm.panel1.BringToFront();
-
                     result = plForm.ShowDialog(this);
                     if (result == DialogResult.Cancel)
                         return;
                     panelElements1 = plForm.textBox1.Text;
                     panelElements2 = plForm.textBox2.Text;
-                    if (panelElements1 == "" || panelElements2 == "") { MessageBox.Show("Все поля должны быть заполнены"); plForm.ShowDialog(this); }
+
+                    if (panelElements1 == "" || panelElements2 == "")
+                    {
+                        MessageBox.Show("Все поля должны быть заполнены");
+                        plForm.ShowDialog(this);
+                    }
                     else
                     {
-                        //проверка на повторение с уже имеющимся факультетом 
-                        for (int i = 0; i <= dataGridView1.RowCount - 2; i++)
-                        {
-                            if (dataGridView1[1, i] != null && dataGridView1[1, i].Value.ToString() == panelElements1)
-                            { k = 1; break; }
-                        }
-                        if (k == 1)
+                        // Проверка на существование факультета в БД
+                        SqlCommand checkFacultyCommand = new SqlCommand(
+                            $"SELECT COUNT(*) FROM Faculty WHERE Name = @NAME", sqlConnection);
+                        checkFacultyCommand.Parameters.AddWithValue("NAME", panelElements1);
+                        int count = (int)checkFacultyCommand.ExecuteScalar();
+
+                        if (count > 0)
                         {
                             MessageBox.Show("Факультет с названием " + panelElements1 + " уже существует!");
                         }
                         else
                         {
-                            SqlCommand command = new SqlCommand(
-                              $"exec INS_FACULTY @NAME, @HEAD"
-                              , sqlConnection);
-                            command.Parameters.AddWithValue("NAME", panelElements1);
-                            command.Parameters.AddWithValue("HEAD", panelElements1);
-                            command.ExecuteNonQuery();
-                            MessageBox.Show("Факультет " + panelElements1 + " добавлен в Бд.");
-                            upd_table("SELECT [Code] AS Код, [Name] AS Название, [Head] AS Руководитель\r\nFROM [dbo].[Faculty];\r\n");
+                            try
+                            {
+                                SqlCommand command = new SqlCommand(
+                                    $"exec INS_FACULTY @NAME, @HEAD", sqlConnection);
+                                command.Parameters.AddWithValue("NAME", panelElements1);
+                                command.Parameters.AddWithValue("HEAD", panelElements2);
+                                command.ExecuteNonQuery();
+                                MessageBox.Show("Факультет " + panelElements1 + " добавлен в Бд.");
+                                upd_table("SELECT [Code] AS Код, [Name] AS Название, [Head] AS Руководитель\r\nFROM [dbo].[Faculty];\r\n");
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Произошла ошибка при выполнении запроса: " + ex.Message);
+                            }
                         }
                     }
                     break;
@@ -184,35 +187,45 @@ namespace СourseWork
                     panelElements3 = plForm.textBox7.Text;
                     panelIntElements1 = (int)plForm.numericUpDown6.Value;
                     panelIntElements2 = (int)plForm.numericUpDown7.Value;
-                    if (panelElements1 == "" || panelElements2 == "" || panelElements3 == "") { MessageBox.Show("Все поля должны быть заполнены"); plForm.ShowDialog(this); }
+
+                    if (panelElements1 == "" || panelElements2 == "" || panelElements3 == "")
+                    {
+                        MessageBox.Show("Все поля должны быть заполнены");
+                        plForm.ShowDialog(this);
+                    }
                     else
                     {
+                        // Проверка на существование ученой степени в БД
+                        SqlCommand checkDegreeCommand = new SqlCommand(
+                            $"SELECT COUNT(*) FROM AcademicDegree WHERE ID = @ACADEMICDEGREEID", sqlConnection);
+                        checkDegreeCommand.Parameters.AddWithValue("ACADEMICDEGREEID", panelIntElements1);
+                        int count = (int)checkDegreeCommand.ExecuteScalar();
 
-                        if (k == 1)
+                        if (count == 0)
                         {
-                            MessageBox.Show(" с названием " + panelElements1 + " уже существует!");
+                            MessageBox.Show("Ошибка. Введенное значение Ученой степени не существует в Бд. " +
+                            "Добавьте его в базу, прежде чем присваивать преподавателям.");
                         }
                         else
                         {
                             try
                             {
                                 SqlCommand command = new SqlCommand(
-                              $"exec INS_TEACHER @NAME, @POSITION, @STATUS, @ACADEMICDEGREEID, @DEPARTMENTID"
-                              , sqlConnection);
+                                $"exec INS_TEACHER @NAME, @POSITION, @STATUS, @ACADEMICDEGREEID, @DEPARTMENTID", sqlConnection);
                                 command.Parameters.AddWithValue("NAME", panelElements1);
                                 command.Parameters.AddWithValue("POSITION", panelElements2);
                                 command.Parameters.AddWithValue("STATUS", panelElements3);
                                 command.Parameters.AddWithValue("ACADEMICDEGREEID", panelIntElements1);
                                 command.Parameters.AddWithValue("DEPARTMENTID", panelIntElements2);
-                                command.ExecuteNonQuery();/////////
+                                command.ExecuteNonQuery();
                                 MessageBox.Show("Преподаватель " + panelElements1 + " добавлен в Бд.");
                                 upd_table("SELECT [ID] AS ИД, [FullName] AS ПолноеИмя, [Position] AS Должность, [Status] AS Статус, \r\n[AcademicDegreeID] AS ИДУченойСтепени, [DepartmentID] AS ИДОтделения\r\nFROM [dbo].[Teacher]\r\n");//
-
                             }
-                            catch { MessageBox.Show("Ошибка. Введенное значение Ученой степени не существует в Бд. " +
-                                "Добавьте его в базу, прежде чем присваивать преподавателям."); }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Произошла ошибка при выполнении запроса: " + ex.Message);
+                            }
                         }
-                            
                     }
                     break;
 
@@ -225,30 +238,41 @@ namespace СourseWork
                     panelElements1 = plForm.textBox9.Text;
                     panelElements2 = plForm.textBox10.Text;
                     panelIntElements1 = (int)plForm.numericUpDown2.Value;
-                    if (panelElements1 == "" || panelElements2 == "") { MessageBox.Show("Все поля должны быть заполнены"); plForm.ShowDialog(this); }
+
+                    if (panelElements1 == "" || panelElements2 == "")
+                    {
+                        MessageBox.Show("Все поля должны быть заполнены");
+                        plForm.ShowDialog(this);
+                    }
                     else
                     {
-                        
-                        //for (int i = 0; i <= dataGridView1.RowCount - 2; i++)
-                        //{
-                        //    if (dataGridView1[0, i].Value.ToString() == panelElements1)
-                        //    { k = 1; break; }
-                        //}
-                        if (k == 1)
+                        // Проверка на существование почасового работника в БД
+                        SqlCommand checkWorkerCommand = new SqlCommand(
+                            $"SELECT COUNT(*) FROM HourlyWorker WHERE FullName = @NAME", sqlConnection);
+                        checkWorkerCommand.Parameters.AddWithValue("NAME", panelElements1);
+                        int count = (int)checkWorkerCommand.ExecuteScalar();
+
+                        if (count > 0)
                         {
                             MessageBox.Show("Почасовой работник " + panelElements1 + " уже существует!");
                         }
                         else
                         {
-                            SqlCommand command = new SqlCommand(
-                              $"exec INS_HOURLYWORKER @NAME, @POSITION, @RANKID"
-                              , sqlConnection);
-                            command.Parameters.AddWithValue("NAME", panelElements1);
-                            command.Parameters.AddWithValue("POSITION", panelElements2);
-                            command.Parameters.AddWithValue("RANKID", panelIntElements1);
-                            command.ExecuteNonQuery();
-                            MessageBox.Show("Почасовой работник " + panelElements1 + " добавлен в Бд.");
-                            upd_table("SELECT [ID] AS ИД, [FullName] AS ПолноеИмя, [Position] AS Должность, [RankID] AS ИДРанга\r\nFROM [dbo].[HourlyWorker]\r\n");//
+                            try
+                            {
+                                SqlCommand command = new SqlCommand(
+                                    $"exec INS_HOURLYWORKER @NAME, @POSITION, @RANKID", sqlConnection);
+                                command.Parameters.AddWithValue("NAME", panelElements1);
+                                command.Parameters.AddWithValue("POSITION", panelElements2);
+                                command.Parameters.AddWithValue("RANKID", panelIntElements1);
+                                command.ExecuteNonQuery();
+                                MessageBox.Show("Почасовой работник " + panelElements1 + " добавлен в Бд.");
+                                upd_table("SELECT [ID] AS ИД, [FullName] AS ПолноеИмя, [Position] AS Должность, [RankID] AS ИДРанга\r\nFROM [dbo].[HourlyWorker]\r\n");//
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Произошла ошибка при выполнении запроса: " + ex.Message);
+                            }
                         }
                     }
                     break;
@@ -263,34 +287,48 @@ namespace СourseWork
                     panelElements1 = plForm.textBox11.Text;
                     panelIntElements2 = (int)plForm.numericUpDown4.Value;
                     panelIntElements3 = (int)plForm.numericUpDown5.Value;
-                    if (panelElements1 == "") { MessageBox.Show("Все поля должны быть заполнены"); plForm.ShowDialog(this); }
+
+                    if (panelElements1 == "")
+                    {
+                        MessageBox.Show("Все поля должны быть заполнены");
+                        plForm.ShowDialog(this);
+                    }
                     else
                     {
-                        
-                        //for (int i = 0; i <= dataGridView1.RowCount - 1; i++)
-                        //{
-                        //    if (dataGridView1[0, i].Value.ToString() == panelElements1)
-                        //    { k = 1; break; }
-                        //}
-                        if (k == 1)
+                        // Проверка на существование плана нагрузки для почасового работника в БД
+                        SqlCommand checkPlanCommand = new SqlCommand(
+                            $"SELECT COUNT(*) FROM PlannedLoad WHERE HourlyID = @HOURLYID AND Position = @POSITION AND Year = @YEAR", sqlConnection);
+                        checkPlanCommand.Parameters.AddWithValue("HOURLYID", panelIntElements1);
+                        checkPlanCommand.Parameters.AddWithValue("POSITION", panelElements1);
+                        checkPlanCommand.Parameters.AddWithValue("YEAR", panelIntElements2);
+                        int count = (int)checkPlanCommand.ExecuteScalar();
+
+                        if (count > 0)
                         {
                             MessageBox.Show("План для почасового работника " + panelElements1 + " уже существует!");
                         }
                         else
                         {
-                            SqlCommand command = new SqlCommand(
-                              $"exec INS_PLANNEDLOAD @HOURLYID, @POSITION, @YEAR, @MONTHLYLOAD"
-                              , sqlConnection);
-                            command.Parameters.AddWithValue("HOURLYID", panelIntElements1);
-                            command.Parameters.AddWithValue("POSITION", panelElements1);
-                            command.Parameters.AddWithValue("YEAR", panelIntElements2);
-                            command.Parameters.AddWithValue("MONTHLYLOAD", panelIntElements3);
-                            command.ExecuteNonQuery();
-                            MessageBox.Show("План для почасового работника " + panelElements1 + " добавлен в Бд.");
-                            upd_table("SELECT\r\n    [HourlyID] AS [ИдентификаторРабочего],\r\n    HourlyWorker.FullName AS [ФИО],\r\n    YEAR([Date]) AS [Год],\r\n    MONTH([Date]) AS [Месяц],\r\n    SUM([HoursWorked]) AS [Кол-во_раб_часов]\r\nFROM\r\n    [dbo].[Workload], [HourlyWorker]\r\nGROUP BY\r\n    [HourlyID], HourlyWorker.FullName, YEAR([Date]), MONTH([Date])\r\n");//
+                            try
+                            {
+                                SqlCommand command = new SqlCommand(
+                                    $"exec INS_PLANNEDLOAD @HOURLYID, @POSITION, @YEAR, @MONTHLYLOAD", sqlConnection);
+                                command.Parameters.AddWithValue("HOURLYID", panelIntElements1);
+                                command.Parameters.AddWithValue("POSITION", panelElements1);
+                                command.Parameters.AddWithValue("YEAR", panelIntElements2);
+                                command.Parameters.AddWithValue("MONTHLYLOAD", panelIntElements3);
+                                command.ExecuteNonQuery();
+                                MessageBox.Show("План для почасового работника " + panelElements1 + " добавлен в Бд.");
+                                upd_table("SELECT\r\n    [HourlyID] AS [ИдентификаторРабочего],\r\n    HourlyWorker.FullName AS [ФИО],\r\n    YEAR([Date]) AS [Год],\r\n    MONTH([Date]) AS [Месяц],\r\n    SUM([HoursWorked]) AS [Кол-во_раб_часов]\r\nFROM\r\n    [dbo].[Workload], [HourlyWorker]\r\nGROUP BY\r\n    [HourlyID], HourlyWorker.FullName, YEAR([Date]), MONTH([Date])\r\n");//
+                            }
+                            catch (Exception ex)
+                            {
+                                MessageBox.Show("Произошла ошибка при выполнении запроса: " + ex.Message);
+                            }
                         }
                     }
                     break;
+
 
                 case "Фактическая нагрузка для почасовика":
                     MessageBox.Show("no insert function");
@@ -318,7 +356,7 @@ namespace СourseWork
                     break;
             }
         }
-
+        // Изменение элементов button
         private void button2_Click(object sender, EventArgs e)
         {
             Form2 plForm = new Form2();
@@ -334,7 +372,6 @@ namespace СourseWork
             string panelElements1;
             string panelElements2;
             string panelElements3;
-            string panelElements4;
             int panelIntElements1;
             int panelIntElements2;
             int panelIntElements3;
@@ -347,7 +384,7 @@ namespace СourseWork
                     try
                     {
                         index = dataGridView1.SelectedRows[0].Index;
-                        plForm.textBox1.Text = dataGridView1[1, index].Value.ToString(); 
+                        plForm.textBox1.Text = dataGridView1[1, index].Value.ToString();
                         plForm.textBox2.Text = dataGridView1[2, index].Value.ToString();
                     }
                     catch { MessageBox.Show("Выберите строку для изменения."); break; }
@@ -362,17 +399,7 @@ namespace СourseWork
                     ID = Convert.ToInt32(dataGridView1[0, index].Value);
                     while (panelElements1 == "" || panelElements2 == "") { MessageBox.Show("Все поля должны быть заполнены"); plForm.ShowDialog(this); }
                     {
-                        //проверка на повторение с уже имеющимся факультетом 
-                        for (int i = 0; i <= dataGridView1.RowCount - 2; i++)
-                        {
-                            if (dataGridView1[1, i] != null && dataGridView1[1, i].Value.ToString() == panelElements1)
-                            { k = 1; break; }
-                        }
-                        if (k == 1)
-                        {
-                            MessageBox.Show("Факультет с названием " + panelElements1 + " уже существует!");
-                        }
-                        else
+                        try
                         {
                             SqlCommand command = new SqlCommand(
                               $"exec UpdateFaculty @Code, @NAME, @HEAD"
@@ -383,6 +410,10 @@ namespace СourseWork
                             command.ExecuteNonQuery();
                             MessageBox.Show("Факультет " + panelElements1 + " добавлен в Бд.");
                             upd_table("SELECT [Code] AS Код, [Name] AS Название, [Head] AS Руководитель\r\nFROM [dbo].[Faculty];\r\n");
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Произошла ошибка при выполнении запроса: " + ex.Message);
                         }
                     }
                     break;
@@ -406,16 +437,7 @@ namespace СourseWork
                     ID = Convert.ToInt32(dataGridView1[0, index].Value);
                     while (panelElements1 == "" || panelElements2 == "") { MessageBox.Show("Все поля должны быть заполнены"); plForm.ShowDialog(this); }
                     {
-                        for (int i = 0; i <= dataGridView1.RowCount - 2; i++)
-                        {
-                            if (dataGridView1[1, i].Value.ToString() == panelElements1)
-                            { k = 1; break; }
-                        }
-                        if (k == 1)
-                        {
-                            MessageBox.Show("Кафедра с названием " + panelElements1 + " уже существует!");
-                        }
-                        else
+                        try
                         {
                             SqlCommand command = new SqlCommand(
                               $"exec UpdateDepartment @code, @NAME, @HEAD, @FACULTYCODE"
@@ -427,6 +449,10 @@ namespace СourseWork
                             command.ExecuteNonQuery();
                             MessageBox.Show("Кафедра " + panelElements1 + " добавлена в Бд.");
                             upd_table("SELECT [Code] AS Код, [Name] AS Название, [Head] AS НачальникКафедры, [FacultyCode] AS КодФакультета\r\nFROM [dbo].[Department]\r\n");//
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show("Произошла ошибка при выполнении запроса: " + ex.Message);
                         }
                     }
                     break;
@@ -462,8 +488,6 @@ namespace СourseWork
                     }
                     else
                     {
-                       
-
                         try
                         {
                             SqlCommand command = new SqlCommand(
@@ -514,8 +538,6 @@ namespace СourseWork
                     }
                     else
                     {
-                        
-
                         try
                         {
                             SqlCommand command = new SqlCommand(
@@ -565,7 +587,6 @@ namespace СourseWork
                     }
                     else
                     {
-
                         try
                         {
                             SqlCommand command = new SqlCommand(
@@ -613,7 +634,7 @@ namespace СourseWork
                     break;
             }
         }
-
+        // Удаление элементов button
         private void button3_Click(object sender, EventArgs e)
         {
             switch (checkTable)
@@ -717,7 +738,7 @@ namespace СourseWork
                     break;
             }
         }
-
+        // Excel button
         private void button4_Click(object sender, EventArgs e)
         {
             Excel.Application exApp = new Excel.Application();
