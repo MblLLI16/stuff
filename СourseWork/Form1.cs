@@ -738,7 +738,6 @@ namespace СourseWork
                     break;
             }
         }
-        // Excel button
         private void button4_Click(object sender, EventArgs e)
         {
             Excel.Application exApp = new Excel.Application();
@@ -762,38 +761,31 @@ namespace СourseWork
                 return;
             }
 
-            Excel.Range range = worksheet.Range["A1:C1"];
-            range.Merge();
-            worksheet.Range["A1"].Value = "Данные в формате Excel:";
-            worksheet.Range["A1"].Font.Bold = true;
-            int startingColumnIndex = 4;
-
-            for (int j = 0; j <= dataGridView1.ColumnCount - 1; j++)
+            // Записываем заголовки столбцов
+            for (int j = 0; j < dataGridView1.ColumnCount; j++)
             {
-                worksheet.Cells[startingColumnIndex, j + 1] = dataGridView1.Columns[j].HeaderText.ToString();
-                ((Excel.Range)worksheet.Cells[1, j + 1]).Columns.AutoFit();
+                worksheet.Cells[1, j + 1] = dataGridView1.Columns[j].HeaderText;
             }
 
-            for (int i = 0; i <= dataGridView1.RowCount - 1; i++)
+            // Записываем данные из DataGridView
+            for (int i = 0; i < dataGridView1.RowCount; i++)
             {
-                for (int j = 0; j <= dataGridView1.ColumnCount - 1; j++)
+                for (int j = 0; j < dataGridView1.ColumnCount; j++)
                 {
-                    if (dataGridView1[j, i].Value != null)
-                    {
-                        worksheet.Cells[startingColumnIndex + 1, j + 1] = dataGridView1[j, i].Value.ToString();
-                    }
+                    worksheet.Cells[i + 2, j + 1] = dataGridView1[j, i].Value?.ToString();
                 }
             }
 
-((Excel.Range)worksheet.Cells[startingColumnIndex + 1, 1]).EntireRow.AutoFit();
-            ((Excel.Range)worksheet.Range[worksheet.Cells[startingColumnIndex + 1, 1], worksheet.Cells[dataGridView1.RowCount + startingColumnIndex + 1, dataGridView1.ColumnCount]]).EntireColumn.AutoFit();
+    ((Excel.Range)worksheet.Cells[1, 1]).EntireRow.AutoFit();
+            ((Excel.Range)worksheet.Range[worksheet.Cells[1, 1], worksheet.Cells[dataGridView1.RowCount + 1, dataGridView1.ColumnCount]]).EntireColumn.AutoFit();
 
             string fileName = "MyExcelDocument.xlsx";
             workbook.SaveAs(fileName);
 
             exApp.Visible = true;
-
         }
+
+
 
         #endregion
 
