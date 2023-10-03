@@ -609,23 +609,23 @@ namespace СourseWork
 
 
                 case "Фактическая нагрузка для почасовика":
-                    MessageBox.Show("no insert function");
+                    MessageBox.Show("no upd function");
                     break;
 
                 case "Ранг почасовика":
-                    MessageBox.Show("no insert function");
+                    MessageBox.Show("no upd function");
                     break;
 
                 case "Ученая степень":
-                    MessageBox.Show("no insert function");
+                    MessageBox.Show("no upd function");
                     break;
 
                 case "Звание":
-                    MessageBox.Show("no insert function");
+                    MessageBox.Show("no upd function");
                     break;
 
                 case "Почасовик-Кафедра":
-                    MessageBox.Show("no insert function");
+                    MessageBox.Show("no upd function");
                     break;
 
                 default:
